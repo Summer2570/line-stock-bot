@@ -1,79 +1,47 @@
 import { google } from 'googleapis';
 
-const auth =
-  new google.auth.GoogleAuth({
-    keyFile: 'service-account.json',
-    scopes: [
-      'https://www.googleapis.com/auth/spreadsheets'
-    ]
-  });
+const auth = new google.auth.GoogleAuth({
+  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets'
+  ]
+});
 
-const sheets =
-  google.sheets({
-    version: 'v4',
-    auth
-  });
+const sheets = google.sheets({
+  version: 'v4',
+  auth
+});
 
 const SHEET_ID =
-  '1kaqVB5UMfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
+  '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
-export async function findPart(
-  keyword
-) {
+export async function findPart(keyword) {
+  try {
+    const response =
+      await sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: 'Sheet1!A2:C'
+      });
 
-  const response =
-    await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
+    const rows = response.data.values || [];
 
-      // เปลี่ยนชื่อ tab ให้ตรง
-      range: "'Actual Box'!A:E"
-    });
+    const result = rows.find((row) =>
+      row[0]?.toLowerCase().includes(
+        keyword.toLowerCase()
+      )
+    );
 
-  const rows =
-    response.data.values || [];
-
-  for (
-    let i = 1;
-    i < rows.length;
-    i++
-  ) {
-
-    const row = rows[i];
-
-    const boxNo =
-      row[0];
-
-    if (
-      boxNo &&
-      boxNo
-        .toLowerCase()
-        .includes(
-          keyword.toLowerCase()
-        )
-    ) {
-
-      return {
-        found: true,
-
-        boxNo:
-          row[0] || '-',
-
-        tpBox:
-          row[1] || '-',
-
-        totalBox:
-          row[2] || '-',
-
-        supplier:
-          row[3] || '-',
-
-        customer:
-          row[4] || '-'
-      };
+    if (!result) {
+      return null;
     }
-  }
 
-  return {
-    found: false
-  };
+    return {
+      code: result[0],
+      name: result[1],
+      stock: result[2]
+    };
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }
