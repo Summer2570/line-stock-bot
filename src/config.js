@@ -10,9 +10,9 @@ export const config = {
 
   line: {
     channelAccessToken:
-      process.env.LINE_CHANNEL_ACCESS_TOKEN,
+      process.env.CHANNEL_ACCESS_TOKEN,
 
     channelSecret:
-      process.env.LINE_CHANNEL_SECRET
+      process.env.CHANNEL_SECRET
   }
 };
