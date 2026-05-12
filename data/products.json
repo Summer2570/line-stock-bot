@@ -1,0 +1,23 @@
+[
+  {
+    "sku": "IP15-BLK-128",
+    "name": "iPhone 15 สีดำ 128GB",
+    "aliases": ["iphone 15", "ไอโฟน 15", "ไอโฟน15", "iphone15"],
+    "stock": 12,
+    "unit": "เครื่อง"
+  },
+  {
+    "sku": "AIRPODS-PRO2",
+    "name": "AirPods Pro 2",
+    "aliases": ["airpods", "airpod", "แอร์พอด", "แอร์พอดโปร"],
+    "stock": 5,
+    "unit": "ชิ้น"
+  },
+  {
+    "sku": "IPAD-AIR-M2",
+    "name": "iPad Air M2",
+    "aliases": ["ipad air", "ไอแพดแอร์", "ipad"],
+    "stock": 0,
+    "unit": "เครื่อง"
+  }
+]
