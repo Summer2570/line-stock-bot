@@ -20,16 +20,15 @@ export function buildStockReply(
   result
 ) {
 
-  if (!result.found) {
+  // กัน null
+  if (!result || !result.found) {
 
     return 'ไม่พบข้อมูล';
   }
 
   return [
-    `Box no. : ${result.boxNo}`,
-    `Total : ${result.total}`,
-    `Supplier : ${result.supplier}`,
-    `Customer : ${result.customer}`,
-    `Use per Day : ${result.usePerDay}`
+    `Code : ${result.code}`,
+    `Name : ${result.name}`,
+    `Stock : ${result.stock}`
   ].join('\n');
 }

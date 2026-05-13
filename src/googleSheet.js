@@ -1,4 +1,3 @@
-```js
 import { google } from 'googleapis';
 
 const serviceAccount = JSON.parse(
@@ -28,6 +27,7 @@ const SHEET_ID =
   '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
 export async function findPart(keyword) {
+
   try {
 
     const response =
@@ -36,12 +36,15 @@ export async function findPart(keyword) {
         range: 'Sheet1!A2:C'
       });
 
-    const rows = response.data.values || [];
+    const rows =
+      response.data.values || [];
 
     const result = rows.find((row) =>
-      row[0]?.toLowerCase().includes(
-        keyword.toLowerCase()
-      )
+      row[0]
+        ?.toLowerCase()
+        .includes(
+          keyword.toLowerCase()
+        )
     );
 
     if (!result) {
@@ -49,6 +52,7 @@ export async function findPart(keyword) {
     }
 
     return {
+      found: true,
       code: result[0],
       name: result[1],
       stock: result[2]
@@ -61,4 +65,3 @@ export async function findPart(keyword) {
     return null;
   }
 }
-```
