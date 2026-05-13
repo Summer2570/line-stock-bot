@@ -1,7 +1,19 @@
+```js
 import { google } from 'googleapis';
 
+const serviceAccount = JSON.parse(
+  process.env.GOOGLE_SERVICE_ACCOUNT
+);
+
+// แก้ปัญหา private key บน Render
+serviceAccount.private_key =
+  serviceAccount.private_key.replace(
+    /\\n/g,
+    '\n'
+  );
+
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+  credentials: serviceAccount,
   scopes: [
     'https://www.googleapis.com/auth/spreadsheets'
   ]
@@ -17,6 +29,7 @@ const SHEET_ID =
 
 export async function findPart(keyword) {
   try {
+
     const response =
       await sheets.spreadsheets.values.get({
         spreadsheetId: SHEET_ID,
@@ -40,8 +53,12 @@ export async function findPart(keyword) {
       name: result[1],
       stock: result[2]
     };
+
   } catch (error) {
+
     console.error(error);
+
     return null;
   }
 }
+```
