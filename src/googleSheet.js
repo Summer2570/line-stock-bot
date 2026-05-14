@@ -5,7 +5,7 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const credentials = JSON.parse(
-  readFileSync(join(__dirname, '../service-account.json'), 'utf8')
+    readFileSync(join(__dirname, 'service-account.json'), 'utf8')
 );
 
 const auth = new google.auth.GoogleAuth({
