@@ -10,7 +10,7 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 
-const SHEET_ID = '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
+const SHEET_ID = '1kaqVB5UMfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
 function normalize(text = '') {
   return text.toString().trim().toUpperCase().replace(/[-\s]/g, '');
