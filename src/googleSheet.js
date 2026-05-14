@@ -1,55 +1,34 @@
 import { google } from 'googleapis';
 
-const sheets = google.sheets({
-  version: 'v4'
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  },
+  scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
 
-const SHEET_ID =
-  '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
+const sheets = google.sheets({ version: 'v4', auth }); // ✅ ใส่ auth
+
+const SHEET_ID = '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
 function normalize(text = '') {
-
-  return text
-    .toString()
-    .trim()
-    .toUpperCase()
-    .replace(/[-\s]/g, '');
+  return text.toString().trim().toUpperCase().replace(/[-\s]/g, '');
 }
 
 export async function findPart(keyword) {
-
   try {
-
-    const response =
-      await sheets.spreadsheets.values.get({
-        spreadsheetId: SHEET_ID,
-        range: 'Actual Box!A:C'
-      });
-
-    const rows =
-      response.data.values || [];
-
-    console.log('ROWS:', rows);
-
-    const normalizedKeyword =
-      normalize(keyword);
-
-    const result = rows.find((row) => {
-
-      const code =
-        normalize(row[0]);
-
-      return code === normalizedKeyword;
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: 'Actual Box!A:C'
     });
 
-    console.log('FOUND:', result);
+    const rows = response.data.values || [];
+    const normalizedKeyword = normalize(keyword);
 
-    if (!result) {
+    const result = rows.find(row => normalize(row[0]) === normalizedKeyword);
 
-      return {
-        found: false
-      };
-    }
+    if (!result) return { found: false };
 
     return {
       found: true,
@@ -59,14 +38,7 @@ export async function findPart(keyword) {
     };
 
   } catch (error) {
-
-    console.error(
-      'GOOGLE SHEET ERROR:',
-      error
-    );
-
-    return {
-      found: false
-    };
+    console.error('GOOGLE SHEET ERROR:', error.message);
+    return { found: false };
   }
 }
