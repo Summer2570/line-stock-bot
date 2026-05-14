@@ -1,15 +1,10 @@
 import { google } from 'googleapis';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const credentials = JSON.parse(
-    readFileSync(join(__dirname, 'service-account.json'), 'utf8')
-);
 
 const auth = new google.auth.GoogleAuth({
-  credentials,
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  },
   scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
 
