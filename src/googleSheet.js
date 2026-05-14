@@ -1,15 +1,6 @@
 import { google } from 'googleapis';
-
-const serviceAccount = JSON.parse(
-  process.env.GOOGLE_SERVICE_ACCOUNT
-);
-
-// แก้ปัญหา private key บน Render
-serviceAccount.private_key =
-  serviceAccount.private_key.replace(
-    /\\n/g,
-    '\n'
-  );
+// import serviceAccount from './line-stock-bot-496106-65a1c9bdedeb.json' with { type: 'json' };
+import serviceAccount from '../service-account.json' with { type: 'json' };
 
 const auth = new google.auth.GoogleAuth({
   credentials: serviceAccount,
