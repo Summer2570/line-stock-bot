@@ -42,6 +42,8 @@ export async function findPart(keyword) {
       return code === normalizedKeyword;
     });
 
+    console.log('FOUND:', result);
+
     if (!result) {
 
       return {
