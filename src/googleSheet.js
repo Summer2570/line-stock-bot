@@ -1,5 +1,4 @@
 import { google } from 'googleapis';
-// import serviceAccount from './line-stock-bot-496106-65a1c9bdedeb.json' with { type: 'json' };
 import serviceAccount from '../service-account.json' with { type: 'json' };
 
 const auth = new google.auth.GoogleAuth({
@@ -17,6 +16,15 @@ const sheets = google.sheets({
 const SHEET_ID =
   '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
+function normalize(text = '') {
+
+  return text
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[-\s]/g, '');
+}
+
 export async function findPart(keyword) {
 
   try {
@@ -24,35 +32,61 @@ export async function findPart(keyword) {
     const response =
       await sheets.spreadsheets.values.get({
         spreadsheetId: SHEET_ID,
-        range: 'Sheet1!A2:C'
+        range: 'Actual Box!A2:C'
       });
 
     const rows =
       response.data.values || [];
 
-    const result = rows.find((row) =>
-      row[0]
-        ?.toLowerCase()
-        .includes(
-          keyword.toLowerCase()
-        )
+    console.log(rows);
+
+    const normalizedKeyword =
+      normalize(keyword);
+
+    console.log(
+      'SEARCH:',
+      normalizedKeyword
     );
 
+    const result = rows.find((row) => {
+
+      const code =
+        normalize(row[0]);
+
+      console.log(
+        'COMPARE:',
+        code,
+        normalizedKeyword
+      );
+
+      return (
+        code.includes(normalizedKeyword)
+      );
+    });
+
     if (!result) {
-      return null;
+
+      return {
+        found: false
+      };
     }
 
     return {
       found: true,
-      code: result[0],
-      name: result[1],
-      stock: result[2]
+      code: result[0] || '-',
+      name: result[1] || '-',
+      stock: result[2] || '0'
     };
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      'GOOGLE SHEET ERROR:',
+      error
+    );
 
-    return null;
+    return {
+      found: false
+    };
   }
 }

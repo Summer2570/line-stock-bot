@@ -1,310 +1,84 @@
-import express from 'express';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import { google } from 'googleapis';
 
-import { config } from './config.js';
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email:
+      process.env.GOOGLE_CLIENT_EMAIL,
 
-import {
-  verifyLineSignature,
-  replyMessage,
-  textMessage
-} from './line.js';
+    private_key:
+      process.env.GOOGLE_PRIVATE_KEY
+        ?.replace(/\\n/g, '\n')
+  },
 
-import {
-  isStockQuestion,
-  findProductStock,
-  buildStockReply
-} from './inventory.js';
-
-const app = express();
-
-// ngrok proxy support
-app.set('trust proxy', 1);
-
-app.use(helmet());
-
-app.use(
-  rateLimit({
-    windowMs: 60 * 1000,
-    limit: 120,
-    standardHeaders: true,
-    legacyHeaders: false
-  })
-);
-
-// IMPORTANT:
-// LINE webhook requires RAW BODY
-app.use(
-  '/webhook',
-  express.raw({
-    type: 'application/json'
-  })
-);
-
-// normal JSON routes
-app.use((req, res, next) => {
-
-  if (req.originalUrl === '/webhook') {
-    return next();
-  }
-
-  express.json()(req, res, next);
-
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets'
+  ]
 });
 
-app.get('/', (_req, res) => {
-
-  res.json({
-    ok: true,
-    service: 'line-stock-bot'
-  });
-
+const sheets = google.sheets({
+  version: 'v4',
+  auth
 });
 
-app.get('/health', (_req, res) => {
+const SHEET_ID =
+  '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
-  res.json({
-    ok: true,
-    time: new Date().toISOString()
-  });
+function normalize(text = '') {
 
-});
-
-app.post('/webhook', async (req, res) => {
-
-  try {
-
-    console.log(
-      'Webhook received'
-    );
-
-    const signature =
-      req.headers['x-line-signature'];
-
-    const rawBody = req.body;
-
-    console.log(
-      'Signature:',
-      signature
-    );
-
-    // verify signature
-    const validSignature =
-      verifyLineSignature(
-        rawBody,
-        signature
-      );
-
-    console.log(
-      'Signature valid:',
-      validSignature
-    );
-
-    if (!validSignature) {
-
-      console.warn(
-        'Invalid LINE signature'
-      );
-
-      return res.status(401).json({
-        error: 'Invalid signature'
-      });
-    }
-
-    let body;
-
-    try {
-
-      body = JSON.parse(
-        rawBody.toString('utf8')
-      );
-
-      console.log(
-        'Parsed body:',
-        JSON.stringify(body, null, 2)
-      );
-
-    } catch (err) {
-
-      console.error(
-        'JSON parse error:',
-        err
-      );
-
-      return res.status(400).json({
-        error: 'Invalid JSON'
-      });
-    }
-
-    const events =
-      Array.isArray(body.events)
-        ? body.events
-        : [];
-
-    console.log(
-      'Events count:',
-      events.length
-    );
-
-    await Promise.all(
-      events.map(handleEvent)
-    );
-
-    return res.sendStatus(200);
-
-  } catch (err) {
-
-    console.error(
-      'Webhook processing error:',
-      err
-    );
-
-    return res.sendStatus(500);
-  }
-});
-
-async function handleEvent(event) {
-
-  console.log(
-    'Incoming event:',
-    JSON.stringify(event, null, 2)
-  );
-
-  if (!event) {
-    console.log('Skip: no event');
-    return;
-  }
-
-  if (event.type !== 'message') {
-    console.log('Skip: not message');
-    return;
-  }
-
-  if (!event.message) {
-    console.log('Skip: no message');
-    return;
-  }
-
-  if (event.message.type !== 'text') {
-    console.log('Skip: not text');
-    return;
-  }
-
-  const userText =
-    event.message.text || '';
-
-  console.log(
-    'User text:',
-    userText
-  );
-
-  let replyText = '';
-
-  try {
-
-    if (
-      isStockQuestion(userText)
-    ) {
-
-      console.log(
-        'Stock question detected'
-      );
-
-      const result =
-        await findProductStock(userText);
-
-      console.log(
-        'Stock result:',
-        result
-      );
-
-      replyText =
-        buildStockReply(result);
-
-    } else {
-
-      console.log(
-        'Fallback message'
-      );
-
-      replyText = [
-        'สวัสดีครับ 👋',
-        'ผมช่วยเช็กสต็อกสินค้าได้',
-        '',
-        'ลองพิมพ์:',
-        '• iPhone 15 เหลือเท่าไร',
-        '• AirPods มีของไหม'
-      ].join('\n');
-    }
-
-  } catch (err) {
-
-    console.error(
-      'Build reply error:',
-      err
-    );
-
-    replyText =
-      'ขออภัยครับ ระบบขัดข้องชั่วคราว';
-  }
-
-  console.log(
-    'Reply text:',
-    replyText
-  );
-
-  try {
-
-    console.log(
-      'Sending LINE reply...'
-    );
-
-    const response =
-      await replyMessage(
-        event.replyToken,
-        [
-          textMessage(replyText)
-        ]
-      );
-
-    console.log(
-      'Reply success:',
-      response
-    );
-
-  } catch (err) {
-
-    console.error(
-      'LINE reply error:',
-      err.response?.data || err.message
-    );
-  }
+  return text
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[-\s]/g, '');
 }
 
-app.use((
-  err,
-  _req,
-  res,
-  _next
-) => {
+export async function findPart(keyword) {
 
-  console.error(
-    'Unhandled error:',
-    err
-  );
+  try {
 
-  res.status(500).json({
-    error: 'Internal server error'
-  });
-});
+    const response =
+      await sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: 'Actual Box!A:C'
+      });
 
-app.listen(config.port, () => {
+    const rows =
+      response.data.values || [];
 
-  console.log(
-    `LINE stock bot running on port ${config.port}`
-  );
+    const normalizedKeyword =
+      normalize(keyword);
 
-  console.log(
-    `Inventory source: ${config.inventorySource}`
-  );
-});
+    const result = rows.find((row) => {
+
+      const code =
+        normalize(row[0]);
+
+      return code === normalizedKeyword;
+    });
+
+    if (!result) {
+
+      return {
+        found: false
+      };
+    }
+
+    return {
+      found: true,
+      code: result[0] || '-',
+      name: result[1] || '-',
+      stock: result[2] || '0'
+    };
+
+  } catch (error) {
+
+    console.error(
+      'GOOGLE SHEET ERROR:',
+      error
+    );
+
+    return {
+      found: false
+    };
+  }
+}
