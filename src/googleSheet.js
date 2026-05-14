@@ -18,12 +18,17 @@ function normalize(text = '') {
 
 export async function findPart(keyword) {
   try {
+    console.log('Trying SHEET_ID:', SHEET_ID);
+    console.log('Using email:', process.env.GOOGLE_CLIENT_EMAIL);
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
       range: 'Actual Box!A:C'
     });
 
     const rows = response.data.values || [];
+    console.log('Total rows found:', rows.length);
+
     const normalizedKeyword = normalize(keyword);
     const result = rows.find(row => normalize(row[0]) === normalizedKeyword);
 
@@ -38,6 +43,8 @@ export async function findPart(keyword) {
 
   } catch (error) {
     console.error('GOOGLE SHEET ERROR:', error.message);
+    console.error('ERROR CODE:', error.code);
+    console.error('ERROR STATUS:', error.status);
     return { found: false };
   }
 }
