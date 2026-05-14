@@ -1,16 +1,7 @@
 import { google } from 'googleapis';
-import serviceAccount from '../service-account.json' with { type: 'json' };
-
-const auth = new google.auth.GoogleAuth({
-  credentials: serviceAccount,
-  scopes: [
-    'https://www.googleapis.com/auth/spreadsheets'
-  ]
-});
 
 const sheets = google.sheets({
-  version: 'v4',
-  auth
+  version: 'v4'
 });
 
 const SHEET_ID =
@@ -32,36 +23,23 @@ export async function findPart(keyword) {
     const response =
       await sheets.spreadsheets.values.get({
         spreadsheetId: SHEET_ID,
-        range: 'Actual Box!A2:C'
+        range: 'Actual Box!A:C'
       });
 
     const rows =
       response.data.values || [];
 
-    console.log(rows);
+    console.log('ROWS:', rows);
 
     const normalizedKeyword =
       normalize(keyword);
-
-    console.log(
-      'SEARCH:',
-      normalizedKeyword
-    );
 
     const result = rows.find((row) => {
 
       const code =
         normalize(row[0]);
 
-      console.log(
-        'COMPARE:',
-        code,
-        normalizedKeyword
-      );
-
-      return (
-        code.includes(normalizedKeyword)
-      );
+      return code === normalizedKeyword;
     });
 
     if (!result) {
