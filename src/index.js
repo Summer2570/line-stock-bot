@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import crypto from 'crypto';
-import { findProductStock, buildStockReply } from './inventory.js';
+import { findPart } from './googleSheet.js';
 import { replyMessage, textMessage } from './line.js';
 import { config } from './config.js';
 import axios from 'axios';
@@ -11,7 +11,6 @@ app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; }
 }));
 
-// ตรวจ LINE signature
 function verifySignature(req) {
   const sig = req.headers['x-line-signature'];
   const hash = crypto
@@ -21,7 +20,6 @@ function verifySignature(req) {
   return hash === sig;
 }
 
-// ถาม Gemini
 async function askGemini(text) {
   const res = await axios.post(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -30,7 +28,6 @@ async function askGemini(text) {
   return res.data.candidates?.[0]?.content?.parts?.[0]?.text || 'ไม่มีคำตอบ';
 }
 
-// ตรวจว่าเป็นรหัสสินค้าไหม เช่น T-118, A001
 function looksLikePartCode(text) {
   return /^[A-Za-z][-\s]?\d+$/.test(text.trim());
 }
@@ -38,7 +35,7 @@ function looksLikePartCode(text) {
 app.post('/webhook', async (req, res) => {
   if (!verifySignature(req)) return res.sendStatus(401);
 
-  res.sendStatus(200); // ตอบ LINE ก่อนเสมอ
+  res.sendStatus(200);
 
   const events = req.body.events || [];
 
@@ -51,13 +48,13 @@ app.post('/webhook', async (req, res) => {
     let replyText;
 
     if (looksLikePartCode(userText)) {
-      // ค้นหาใน Google Sheets
       console.log('Stock question detected');
-      const result = await findProductStock(userText);
+      const result = await findPart(userText);
       console.log('Stock result:', result);
-      replyText = buildStockReply(result);
+      replyText = result.found
+        ? `Code : ${result.code}\nName : ${result.name}\nStock : ${result.stock}`
+        : 'ไม่พบข้อมูล';
     } else {
-      // ถาม Gemini
       replyText = await askGemini(userText);
     }
 

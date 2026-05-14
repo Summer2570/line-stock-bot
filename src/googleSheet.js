@@ -8,7 +8,7 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
 
-const sheets = google.sheets({ version: 'v4', auth }); // ✅ ใส่ auth
+const sheets = google.sheets({ version: 'v4', auth });
 
 const SHEET_ID = '1kaqVB5UmfJRYo7jDHQojCphPAmeujgLtVQttT4AwKe8';
 
@@ -25,7 +25,6 @@ export async function findPart(keyword) {
 
     const rows = response.data.values || [];
     const normalizedKeyword = normalize(keyword);
-
     const result = rows.find(row => normalize(row[0]) === normalizedKeyword);
 
     if (!result) return { found: false };
